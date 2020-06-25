@@ -79,6 +79,39 @@ def align_down(matrix, out):
     return out
 
 
+def get_available_from_zeros(a):
+    uc, dc, lc, rc = False, False, False, False
+
+    v_saw_0 = [False, False, False, False]
+    v_saw_1 = [False, False, False, False]
+
+    for i in [0, 1, 2, 3]:
+        saw_0 = False
+        saw_1 = False
+
+        for j in [0, 1, 2, 3]:
+
+            if a[i][j] == 0:
+                saw_0 = True
+                v_saw_0[j] = True
+
+                if saw_1:
+                    rc = True
+                if v_saw_1[j]:
+                    dc = True
+
+            if a[i][j] > 0:
+                saw_1 = True
+                v_saw_1[j] = True
+
+                if saw_0:
+                    lc = True
+                if v_saw_0[j]:
+                    uc = True
+
+    return [uc, dc, lc, rc]
+
+
 class GameBoard:
     def __init__(self):
         self.grid = np.zeros((4, 4))
@@ -102,7 +135,10 @@ class GameBoard:
     def get_max_tile(self):
         return np.amax(self.grid)
 
-    def move(self, direction):
+    def move(self, direction, get_avail_call=False):
+        if get_avail_call:
+            clone = self.clone()
+
         z1 = np.zeros((4, 4))
         z2 = np.zeros((4, 4))
 
@@ -122,6 +158,28 @@ class GameBoard:
             self.grid = align_right(self.grid, z1)
             self.grid = merge_right(self.grid)
             self.grid = align_right(self.grid, z2)
+
+        if get_avail_call:
+            return not (clone.grid == self.grid).all()
+        else:
+            return None
+
+    def get_available_moves(self, directions=dirs):
+        available_moves = []
+
+        a1 = get_available_from_zeros(self.grid)
+
+        for x in directions:
+            if not a1[x]:
+                board_clone = self.clone()
+
+                if board_clone.move(x, True):
+                    available_moves.append(x)
+
+            else:
+                available_moves.append(x)
+
+        return available_moves
 
     def get_cell_value(self, pos):
         return self.grid[pos[0]][pos[1]]
