@@ -135,6 +135,10 @@ class GameBoard:
     def get_max_tile(self):
         return np.amax(self.grid)
 
+    def is_max_in_corner(self):
+        corners = self.grid[::self.grid.shape[0]-1, ::self.grid.shape[1]-1]
+        return self.get_max_tile() in corners
+
     def move(self, direction, get_avail_call=False):
         if get_avail_call:
             clone = self.clone()
