@@ -3,7 +3,6 @@ import time
 import numpy as np
 
 directions = [UP, DOWN, LEFT, RIGHT] = range(4)
-states = [COMPUTER, AGENT, TERMINAL] = range(3)
 CHANCE_2 = 0.9
 CHANCE_4 = 0.1
 
@@ -28,7 +27,9 @@ class Expectimax():
         grid = board.grid
         utility = 0
         smoothness = 0
+        monotonocity = 0
 
+        big_t = np.sum(np.power(grid, 2))
         smoothness -= np.sum(np.abs(grid[::, 0] - grid[::, 1]))
         smoothness -= np.sum(np.abs(grid[::, 1] - grid[::, 2]))
         smoothness -= np.sum(np.abs(grid[::, 2] - grid[::, 3]))
@@ -36,16 +37,39 @@ class Expectimax():
         smoothness -= np.sum(np.abs(grid[1, ::] - grid[2, ::]))
         smoothness -= np.sum(np.abs(grid[2, ::] - grid[3, ::]))
 
-        empty_w = emptiness(num_empty)
-        max_corner_w = 200
+        # vertical = grid[:, 1:] >= grid[:, :-1]
+        # horizontal = grid.T[:, 1:] >= grid.T[:, :-1]
+        #
+        # for i in range(4):
+        #     if not np.all(vertical[i, ::]) and np.any(vertical[i, ::]):
+        #         monotonocity -= 1
+        #     if not np.all(horizontal[i, ::]) and np.any(horizontal[i, ::]):
+        #         monotonocity -= 1
+
+        unique, counts = np.unique(grid, return_counts=True)
+        occurrences = dict(zip(unique, counts))
+
+        unmerged = 0
+
+        for occurrence in occurrences:
+            if occurrences[occurrence] > 1:
+                unmerged -= occurrences[occurrence] * occurrence
+
+        empty_w = 100
+        max_corner_w = 2
+       # monotonocity_w = 100
 
         utility += empty_w * num_empty
         utility += smoothness
-        print(smoothness, utility)
+        #utility += monotonocity * monotonocity_w
+        utility += np.sqrt(big_t)
+        utility += unmerged
 
-        if board.is_max_in_corner() and num_empty >= 4:
-            utility += max_corner_w
+        if board.is_max_in_corner():
+            utility += max_corner_w * board.get_max_tile()
 
+        #print(smoothness, utility, monotonocity)
+        #print(board.current_merges)
         return None, utility
 
     def value(self, board, depth=0):
@@ -53,13 +77,15 @@ class Expectimax():
         num_empty = len(empty_cells)
 
         if depth % 2 == 0:
-            if num_empty >= 5 and depth > 1:
-                return self.eval_heuristic(board, num_empty)
-            if num_empty >= 0 and depth > 3:
-                return self.eval_heuristic(board, num_empty)
-
             return self.max_value(board, depth)
         else:
+            if num_empty >= 6 and depth > 2:
+                return self.eval_heuristic(board, num_empty)
+            if num_empty >= 0 and depth > 4:
+                return self.eval_heuristic(board, num_empty)
+            if num_empty == 0:
+                return self.max_value(board, depth)
+
             return self.exp_value(board, empty_cells, depth)
 
     def max_value(self, board, depth=0):
