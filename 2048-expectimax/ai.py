@@ -27,7 +27,6 @@ class Expectimax():
         grid = board.grid
         utility = 0
         smoothness = 0
-        monotonocity = 0
 
         big_t = np.sum(np.power(grid, 2))
         smoothness -= np.sum(np.abs(grid[::, 0] - grid[::, 1]))
@@ -36,15 +35,6 @@ class Expectimax():
         smoothness -= np.sum(np.abs(grid[0, ::] - grid[1, ::]))
         smoothness -= np.sum(np.abs(grid[1, ::] - grid[2, ::]))
         smoothness -= np.sum(np.abs(grid[2, ::] - grid[3, ::]))
-
-        # vertical = grid[:, 1:] >= grid[:, :-1]
-        # horizontal = grid.T[:, 1:] >= grid.T[:, :-1]
-        #
-        # for i in range(4):
-        #     if not np.all(vertical[i, ::]) and np.any(vertical[i, ::]):
-        #         monotonocity -= 1
-        #     if not np.all(horizontal[i, ::]) and np.any(horizontal[i, ::]):
-        #         monotonocity -= 1
 
         unique, counts = np.unique(grid, return_counts=True)
         occurrences = dict(zip(unique, counts))
@@ -57,19 +47,15 @@ class Expectimax():
 
         empty_w = 100
         max_corner_w = 2
-       # monotonocity_w = 100
 
         utility += empty_w * num_empty
         utility += smoothness
-        #utility += monotonocity * monotonocity_w
         utility += np.sqrt(big_t)
         utility += unmerged
 
         if board.is_max_in_corner():
             utility += max_corner_w * board.get_max_tile()
 
-        #print(smoothness, utility, monotonocity)
-        #print(board.current_merges)
         return None, utility
 
     def value(self, board, depth=0):
